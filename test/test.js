@@ -169,6 +169,40 @@ describe('Cookie Session', function () {
     })
   })
 
+  it('should serialize booleans', function (done) {
+    let falseBoolean
+    let trueBoolean
+    var app = App()
+    app.use(function (req, res, next) {
+      if (req.method === 'POST') {
+        req.session.trueBoolean = true
+        req.session.falseBoolean = false
+        res.statusCode = 204
+        res.end()
+      } else {
+        falseBoolean = req.session.falseBoolean
+        trueBoolean = req.session.trueBoolean
+        res.end()
+      }
+    })
+
+    request(app)
+      .post('/')
+      .expect(shouldHaveCookie('session'))
+      .expect(204, function (err, res) {
+        if (err) return done(err)
+        request(app)
+          .get('/')
+          .set('Cookie', cookieHeader(cookies(res)))
+          .expect(200)
+          .end((err, res) => {
+            if (err) return done(err)
+            assert.strictEqual(falseBoolean, false)
+            assert.strictEqual(trueBoolean, true)
+            done()
+          })
+      })
+  })
   describe('when the session contains a ;', function () {
     it('should still work', function (done) {
       var app = App()
